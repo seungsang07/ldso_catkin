@@ -8,11 +8,14 @@
 #include "internal/PR.h"
 
 #include <g2o/core/block_solver.h>
+#include <g2o/core/sparse_optimizer.h>
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include <g2o/core/optimization_algorithm_dogleg.h>
 #include <g2o/solvers/eigen/linear_solver_eigen.h>
 #include <g2o/core/robust_kernel_impl.h>
+#include <g2o/types/slam3d/edge_se3_offset.h>
+#include <g2o/types/slam3d/parameter_se3_offset.h>
 
 using namespace std;
 using namespace ldso::internal;
@@ -76,16 +79,25 @@ namespace ldso {
 
         LOG(INFO) << "start pose graph thread!" << endl;
         // Setup optimizer
-        g2o::SparseOptimizer optimizer;
-        typedef BlockSolver<BlockSolverTraits<7, 3> > BlockSolverType;
-        BlockSolverType::LinearSolverType *linearSolver;
-        linearSolver = new g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType>();
-        BlockSolverType *solver_ptr = new BlockSolverType(linearSolver);
-        // g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-        g2o::OptimizationAlgorithmGaussNewton *solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
-        // g2o::OptimizationAlgorithmDogleg *solver = new g2o::OptimizationAlgorithmDogleg(solver_ptr);
-        optimizer.setAlgorithm(solver);
-        optimizer.setVerbose(false);
+        typedef BlockSolver<BlockSolverTraits<7,3>> SlamBlockSolver;
+        typedef LinearSolverEigen<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+        g2o::SparseOptimizer optimizer_;
+        SlamLinearSolver *linearSolver_ = new SlamLinearSolver();
+        linearSolver_->setBlockOrdering(false);
+        SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver_);
+        g2o::OptimizationAlgorithmGaussNewton *solver_ = new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
+        optimizer_.setAlgorithm(solver_);
+
+//        g2o::SparseOptimizer optimizer;
+//        typedef BlockSolver<BlockSolverTraits<7, 3> > BlockSolverType;
+//        BlockSolverType::LinearSolverType *linearSolver;
+//        linearSolver = new g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType>();
+//        BlockSolverType *solver_ptr = new BlockSolverType(linearSolver);
+//        // g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+//        g2o::OptimizationAlgorithmGaussNewton *solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
+//        // g2o::OptimizationAlgorithmDogleg *solver = new g2o::OptimizationAlgorithmDogleg(solver_ptr);
+//        optimizer.setAlgorithm(solver);
+//        optimizer.setVerbose(false);
 
         // keyframes
         int maxKFid = 0;
@@ -105,7 +117,8 @@ namespace ldso {
             CHECK(Scw.scale() > 0);
             vSim3->setEstimate(Scw);
             vSim3->setId(idKF);
-            optimizer.addVertex(vSim3);
+            optimizer_.addVertex(vSim3);
+//            optimizer.addVertex(vSim3);
 
             // fix the last one since we don't want to affect the frames in window
             if (fr == currentKF) {
@@ -118,31 +131,45 @@ namespace ldso {
         for (const shared_ptr<Frame> &fr: framesOpti) {
             unique_lock<mutex> lock(fr->mutexPoseRel);
             for (auto &rel: fr->poseRel) {
-                VertexSim3 *vPR1 = (VertexSim3 *) optimizer.vertex(fr->kfId);
-                VertexSim3 *vPR2 = (VertexSim3 *) optimizer.vertex(rel.first->kfId);
+                VertexSim3 *vPR1 = (VertexSim3 *) optimizer_.vertex(fr->kfId);
+                VertexSim3 *vPR2 = (VertexSim3 *) optimizer_.vertex(rel.first->kfId);
+//                VertexSim3 *vPR1 = (VertexSim3 *) optimizer.vertex(fr->kfId);
+//                VertexSim3 *vPR2 = (VertexSim3 *) optimizer.vertex(rel.first->kfId);
                 EdgeSim3 *edgePR = new EdgeSim3();
                 if (vPR1 == nullptr || vPR2 == nullptr)
                     continue;
-                edgePR->setVertex(0, vPR1);
-                edgePR->setVertex(1, vPR2);
+//                edgePR->setVertex(0, vPR1);
+//                edgePR->setVertex(1, vPR2);
+                edgePR->vertices()[0] = vPR1;
+                edgePR->vertices()[1] = vPR2;
                 edgePR->setMeasurement(rel.second.Tcr);
 
                 if (rel.second.isLoop)
+                {
                     edgePR->setInformation(rel.second.info /* *10 */);
-                else
-                    edgePR->setInformation(rel.second.info);
+                    optimizer_.addEdge(edgePR);
+                    cntEdgePR++;
+                }
+//                else
+//                    edgePR->setInformation(rel.second.info);
 
-                optimizer.addEdge(edgePR);
-                cntEdgePR++;
+//                optimizer.addEdge(edgePR);
             }
         }
+        std::cout<<cntEdgePR<<std::endl;
+//        optimizer_.save("before_optimize.g2o");
+//        VertexSim3* firstRobotPose = dynamic_cast<VertexSim3*>(optimizer_.vertex(0));
+//        firstRobotPose->setFixed(true);
+        optimizer_.setVerbose(false);
 
-        optimizer.initializeOptimization();
-        optimizer.optimize(25);
+        optimizer_.initializeOptimization();
+        optimizer_.optimize(25);
+//        optimizer.initializeOptimization();
+//        optimizer.optimize(25);
 
         // recover the pose and points estimation
         for (shared_ptr<Frame> frame: framesOpti) {
-            VertexSim3 *vSim3 = (VertexSim3 *) optimizer.vertex(frame->kfId);
+            VertexSim3 *vSim3 = (VertexSim3 *) optimizer_.vertex(frame->kfId);
             Sim3 Scw = vSim3->estimate();
             CHECK(Scw.scale() > 0);
 
