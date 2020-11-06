@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<package>
+  <name>ldso</name>
+  <version>0.0.1</version>
+  <description>LDSO catkin_make migration</description>
+
+  <maintainer email="alex_jhlee@kaist.ac.kr">jhlee</maintainer>
+
+  <license>BSD</license>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>ros_bridge</build_depend>
+  <build_depend>rosbag</build_depend>
+  <build_depend>libzip</build_depend>
+  <build_depend>glog</build_depend>
+  <build_depend>g2o</build_depend>
+  <build_depend>SuiteParse</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>boost</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>opencv2</build_depend>
+  <build_depend>Eigen</build_depend>
+  <build_depend>image_transport</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>ros_bridge</run_depend>
+  <run_depend>rosbag</run_depend>
+  <run_depend>glog</run_depend>
+  <run_depend>g2o</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>libzip</run_depend>
+  <run_depend>SuiteParse</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>boost</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>cmake_modules</run_depend>
+  <run_depend>opencv2</run_depend>
+  <run_depend>Eigen</run_depend>
+  <run_depend>image_transport</run_depend>
+
+</package>
