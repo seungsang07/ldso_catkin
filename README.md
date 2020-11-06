@@ -10,18 +10,19 @@
    In arXiv:1607.02555, 2016
 
 ## Dependencies
-
-### System dependencies
-
-There is a convenience script that will help you install the needed
-libraries in Ubuntu 16.04 and later, including `Eigen`, `glog`,
-`gtest`, `Suitesparse`, `OpenCV`, `libzip`.
-
+ 
+ ```
+sudo apt-get install libeigen3-dev libgoogle-glog-dev libgtest-dev libsuitesparse-dev libopencv-dev libzip-dev libboost-all-dev
+ ```
+ 
+build DBoW3 in the thirdparty folder first.
 ```
-./install_dependencies.sh
+cd thirdparty/DBoW3
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+make
 ```
-
-On OSX you can install these via Homebrew.
 
 ### Other libraries
 
@@ -30,10 +31,6 @@ Compile and install
 visualization.
  
 ### Compile
- 
- ```
- ./make_project.sh
- ```
 
 This will build the thirdparty library and also ldso library for
 you. You can also follow the steps in this script manually (will
@@ -41,55 +38,17 @@ compile DBoW3 and g2o first, and the ldso).
 
 ## Run
 
-We provide examples on three datasets.
- - TUM-Mono: [https://vision.in.tum.de/mono-dataset](https://vision.in.tum.de/mono-dataset)
- - Kitti: [Kitti odometry](http://www.cvlibs.net/datasets/kitti/eval_odometry.php)
- - EuRoC: [Euroc MAV dataset](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets)
-
-You can easily extend them in the `examples` folder or add your own
-executables for your camera or dataset.
-
-After compilation, in the `bin` directory there will be three
-executables like `run_dso_xxx`. You can either specify the directories
-in the source file like `examples/run_dso_xxx.cc`, or pass them as
-command line parameters. When running LDSO, you will see a window
-showing an visualization of camera trajectory and tracked points.
-
-Make sure your working directory is at the root of LDSO code, to
-ensure that files like the BoW vocabulary file are found.
-
 **TUM-Mono:**
 
 To run LDSO on TUM-Mono dataset sequence 34, execute:
 
 ```
-./bin/run_dso_tum_mono \
+rosrun ldso ldso
     preset=0 \
     files=XXXXX/TUMmono/sequences/sequence_34/images.zip \
     vignette=XXXXX/TUMmono/sequences/sequence_34/vignette.png \
     calib=XXXXX/TUMmono/sequences/sequence_34/camera.txt \
     gamma=XXXXX/TUMmono/sequences/sequence_34/pcalib.txt
-```
-
-**Kitti:**
-
-To run LDSO on Kitti dataset sequence 00, execute:
-
-```
-./bin/run_dso_kitti \
-    preset=0 \
-    files=XXXXX/Kitti/odometry/dataset/sequences/00/ \
-    calib=./examples/Kitti/Kitti00-02.txt
-```
-
-**EuRoC:**
-
-To run LDSO on EuRoC dataset sequence MH_01_easy, execute:
-
-```
-./bin/run_dso_euroc \
-    preset=0 \
-    files=XXXX/EuRoC/MH_01_easy/mav0/cam0/
 ```
 
 ## Notes
